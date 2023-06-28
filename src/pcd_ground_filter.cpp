@@ -1,6 +1,7 @@
 // ======================================================================================
 // Copyright 2017 State Key Laboratory of Remote Sensing Science,
-// Institute of Remote Sensing Science and Engineering, Beijing Normal University
+// Institute of Remote Sensing Science and Engineering, Beijing Normal
+// University
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +16,11 @@
 // limitations under the License.
 // ======================================================================================
 
-#include <vector>
-#include <locale.h>
-#include <time.h>
 #include <cstdlib>
 #include <cstring>
+#include <locale.h>
+#include <time.h>
+#include <vector>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -38,8 +39,7 @@ int main(int argc, char* argv[])
     pcl::PointCloud<pcl::PointXYZI>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZI>());
     pcl::PointCloud<pcl::PointXYZI> ground_cloud, lower_ground_cloud, upper_ground_cloud;
 
-    namespace fs = boost::filesystem;
-    std::string input_pcd_name = fs::path(input_pcd).relative_path().string() + fs::path(input_pcd).stem().string();
+    std::string input_pcd_name = input_pcd.substr(0, input_pcd.find_last_of("."));
     // Import input point cloud
     if (pcl::io::loadPCDFile(input_pcd.c_str(), *input_cloud) == -1)
     {
@@ -59,12 +59,12 @@ int main(int argc, char* argv[])
 
     // step 3 segmentGround
     csf.segmentGround(input_cloud, upper_ground_cloud, lower_ground_cloud, ground_cloud);
-
     end = clock();
     double dur = (double)(end - start);
     printf("Use Time:%f\n", (dur / CLOCKS_PER_SEC));
 
     std::string ground_pcd_name = input_pcd_name + "_ground_cloud.pcd";
+    std::cout << ground_pcd_name << std::endl;
     if (pcl::io::savePCDFileBinary(ground_pcd_name, ground_cloud))
     {
       std::cerr << "Error: Cannot save PCD: " + ground_pcd_name << std::endl;
@@ -75,26 +75,35 @@ int main(int argc, char* argv[])
     if (separate_upper_lower_ground == 1)
     {
       std::string upper_ground_pcd_name = input_pcd_name + "_upper_ground_cloud.pcd";
-      if (pcl::io::savePCDFileBinary(upper_ground_pcd_name, upper_ground_cloud))
+      if (!upper_ground_cloud.empty())
       {
-        std::cerr << "Error: Cannot save PCD: " + upper_ground_pcd_name << std::endl;
-        exit(1);
+        if (pcl::io::savePCDFileBinary(upper_ground_pcd_name, upper_ground_cloud))
+        {
+          std::cerr << "Error: Cannot save PCD: " + upper_ground_pcd_name << std::endl;
+          exit(1);
+        }
       }
       std::string lower_ground_pcd_name = input_pcd_name + "_lower_ground_cloud.pcd";
-      if (pcl::io::savePCDFileBinary(lower_ground_pcd_name, lower_ground_cloud))
+      if (!lower_ground_cloud.empty())
       {
-        std::cerr << "Error: Cannot save PCD: " + lower_ground_pcd_name << std::endl;
-        exit(1);
+        if (pcl::io::savePCDFileBinary(lower_ground_pcd_name, lower_ground_cloud))
+        {
+          std::cerr << "Error: Cannot save PCD: " + lower_ground_pcd_name << std::endl;
+          exit(1);
+        }
       }
     }
     else
     {
       std::string non_ground_pcd_name = input_pcd_name + "_non_ground_cloud.pcd";
       pcl::PointCloud<pcl::PointXYZI> non_ground_cloud = upper_ground_cloud + lower_ground_cloud;
-      if (pcl::io::savePCDFileBinary(non_ground_pcd_name, non_ground_cloud))
+      if (!non_ground_cloud.empty())
       {
-        std::cerr << "Error: Cannot save PCD: " + non_ground_pcd_name << std::endl;
-        exit(1);
+        if (pcl::io::savePCDFileBinary(non_ground_pcd_name, non_ground_cloud))
+        {
+          std::cerr << "Error: Cannot save PCD: " + non_ground_pcd_name << std::endl;
+          exit(1);
+        }
       }
     }
 
